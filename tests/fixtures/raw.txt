@@ -1,0 +1,9 @@
+[INF] Loading provider config from /run/aav2/cfg/provider-config.yaml
+{"host":"api.example.com","input":"example.com","source":"crtsh"}
+{"host":"WWW.example.com","input":"example.com","source":"hackertarget"}
+{"host":"api.example.com","input":"example.com","source":"alienvault"}
+42
+{"input":"example.com","source":"crtsh"}
+not json at all
+{"host":"mail.example.com","input":"example.com","source":"crtsh"}
+

@@ -1,0 +1,18 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install Lua 5.4
+        run: sudo apt-get update -q && sudo apt-get install -y -q lua5.4
+      - name: Parser tests
+        run: lua5.4 tests/run.lua
+      - name: Bundle builds and matches the manifest version
+        run: scripts/bundle.sh "$(sed -n 's/^  version: \([0-9][^ ]*\).*/\1/p' module.yaml | head -1)"

@@ -1,0 +1,67 @@
+# aav2 worker module manifest — EXAMPLE (draft format, schema_version 0).
+# The final manifest schema is defined by the aav2 plugin-architecture spec
+# (attack-atlas/aav2 #23); this repo is the reference example it is built
+# against and will be updated when the spec is signed off.
+schema_version: 0
+
+module:
+  name: subfinder
+  version: 1.0.0                    # module version (this repo's release tag, minus the "v")
+  description: Passive subdomain enumeration via ProjectDiscovery subfinder.
+  homepage: https://github.com/attack-atlas/aav2-module-example
+
+# The external CLI binary this module drives. The worker fetches it from the
+# upstream release, verifies BOTH hashes, and installs it into its private
+# tool directory. The module bundle never ships the binary itself.
+binaries:
+  - name: subfinder
+    version: 2.16.0
+    platforms:
+      linux/amd64:
+        url: https://github.com/projectdiscovery/subfinder/releases/download/v2.16.0/subfinder_2.16.0_linux_amd64.zip
+        archive_sha256: 1b7f9c608e9a5bd59e609a5e09710d63c5485e92d3d49dc2c16eb4fdbe10cb60
+        binary_sha256: 256e6671b22a6c6870fdf5816b974838a72084e9ae2606d26ee07889fa842af1
+        checksums_file: https://github.com/projectdiscovery/subfinder/releases/download/v2.16.0/subfinder_2.16.0_checksums.txt
+    version_arg: -version
+    expected_version: 2.16.0
+
+# How the worker invokes the binary. Placeholders:
+#   {args.<name>}   — task arguments (validated against `arguments` below)
+#   {config.<name>} — absolute path of a delivered config file (see `configs`)
+# The aav2 save-time lint still applies: -duc is required, update flags are forbidden.
+command: subfinder -duc -silent -json -d {args.domain} -pc {config.provider}
+
+arguments:
+  domain:
+    type: string
+    required: true
+    # A value starting with "-" is rejected by the worker regardless (argv injection guard).
+    pattern: '^[A-Za-z0-9.-]{1,253}$'
+
+# Config files delivered to the tool at run time. Each one is written to a
+# per-task, read-only path before exec and removed afterwards.
+#   source: module      — shipped in this bundle (non-secret defaults)
+#   source: operator    — supplied by the operator on the worker host / orchestrator (may hold secrets)
+configs:
+  provider:
+    path_in_bundle: config/provider-config.yaml
+    source: operator           # operators override with their API keys; the bundled file is the empty default
+    mode: "0400"
+
+# The parser turns the tool's raw output into aav2's normalized document.
+parser:
+  runtime: lua                 # lua | wasm | (more runtimes per the spec)
+  entrypoint: parser/subfinder.lua
+  function: parse              # parse(raw: string) -> { assets, edges, parse_skipped }
+  output_schema_version: 1
+
+# What the module may do at run time. The worker enforces this; a module
+# cannot widen it.
+permissions:
+  network: egress              # subfinder queries public passive sources
+  filesystem: none             # beyond its delivered configs + scratch dir
+  capabilities: []             # zero Linux capabilities (aav2 D-5)
+
+resources:
+  timeout: 10m
+  output_cap: 64MiB

@@ -1,0 +1,9 @@
+# subfinder provider-config — EMPTY DEFAULT shipped with the module.
+# Passive sources that need API keys stay disabled until the operator
+# delivers their own copy (configs.provider.source: operator). Never commit
+# real API keys to a module repo.
+#
+# Example shape (keys intentionally omitted):
+# securitytrails: []
+# virustotal: []
+# github: []

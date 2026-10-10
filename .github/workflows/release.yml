@@ -1,0 +1,25 @@
+name: release
+# Tag vX.Y.Z (equal to module.version in module.yaml) to publish a bundle.
+on:
+  push:
+    tags: ["v*.*.*"]
+permissions:
+  contents: write   # create the GitHub release + upload assets; nothing else
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install Lua 5.4
+        run: sudo apt-get update -q && sudo apt-get install -y -q lua5.4
+      - name: Parser tests
+        run: lua5.4 tests/run.lua
+      - name: Build bundle
+        run: scripts/bundle.sh "${GITHUB_REF_NAME#v}"
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "subfinder module $GITHUB_REF_NAME" \
+            --notes "aav2 worker module bundle. Verify with: sha256sum -c $(ls dist/*.sha256 | xargs -n1 basename)"
