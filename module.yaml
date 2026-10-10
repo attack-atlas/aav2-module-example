@@ -6,7 +6,7 @@ schema_version: 0
 
 module:
   name: subfinder
-  version: 1.0.0                    # module version (this repo's release tag, minus the "v")
+  version: 1.1.0                    # module version (this repo's release tag, minus the "v")
   description: Passive subdomain enumeration via ProjectDiscovery subfinder.
   homepage: https://github.com/attack-atlas/aav2-module-example
 
@@ -39,13 +39,15 @@ arguments:
     pattern: '^[A-Za-z0-9.-]{1,253}$'
 
 # Config files delivered to the tool at run time. Each one is written to a
-# per-task, read-only path before exec and removed afterwards.
-#   source: module      — shipped in this bundle (non-secret defaults)
-#   source: operator    — supplied by the operator on the worker host / orchestrator (may hold secrets)
+# per-task, read-only tmpfs path before exec and removed afterwards.
+#   source: module        — shipped in this bundle (non-secret defaults)
+#   source: orchestrator  — managed by an aav2 admin in the orchestrator (may hold
+#                           secrets: encrypted at rest, write-only/redacted in the
+#                           API) and delivered only to the worker running this module
 configs:
   provider:
     path_in_bundle: config/provider-config.yaml
-    source: operator           # operators override with their API keys; the bundled file is the empty default
+    source: orchestrator       # admins set the real file (with API keys) in the orchestrator; the bundled file is the empty default
     mode: "0400"
 
 # The parser turns the tool's raw output into aav2's normalized document.

@@ -13,13 +13,13 @@ A module packages everything a worker needs to run one tool, so that tool logic 
 | Manifest | [`module.yaml`](module.yaml) | Name, version, runtime, command, arguments, permissions and resources. This is the contract between the module and the worker. |
 | External binary | `binaries:` in the manifest | Fetched from the **upstream release URL**, with the archive sha256 and the extracted-binary sha256 both verified, then installed into the worker's private tool directory. **The bundle never contains the binary.** |
 | Parser | [`parser/subfinder.lua`](parser/subfinder.lua) | Runs in the worker's sandboxed **Lua** runtime (no `io`/`os`) and turns raw tool output into aav2's normalized document (`assets`, `edges`, `parse_skipped`). Other runtimes, such as `wasm`, use the same contract. |
-| Config files | [`config/`](config) and `configs:` in the manifest | Written to a per-task, read-only path before the tool runs, then removed. `source: module` files ship in the bundle. `source: operator` files (anything that can hold secrets, like subfinder's API keys) are supplied by the operator and override the bundled empty default. |
+| Config files | [`config/`](config) and `configs:` in the manifest | Written to a per-task, read-only tmpfs path before the tool runs, then removed. `source: module` files ship in the bundle. `source: orchestrator` files (anything that can hold secrets, like subfinder's API keys) are managed by an aav2 admin in the orchestrator (encrypted at rest, never echoed back by the API) and delivered only to the worker running the module. They override the bundled empty default. **Never commit secrets to a module repo.** |
 
 ## Registry model: GitHub
 
 - **One repo per module.** A module version is a **git tag `vX.Y.Z`** equal to `module.version`.
 - Each tag publishes a **GitHub release** containing a deterministic bundle (`aav2-module-subfinder-X.Y.Z.tar.gz`) and its `.sha256`. See [`.github/workflows/release.yml`](.github/workflows/release.yml).
-- The orchestrator records which module versions are approved. Workers pull approved bundles, verify the digest, and load them. Signing and attestation are defined by the aav2 spec.
+- An aav2 admin **allowlists the repo** and **pins an exact version** (per worker group if needed). Workers pull the pinned bundle **directly from GitHub**, verify its sha256 against the pin, and swap it in. Rolling back means re-pinning the previous version. Signing and attestation may be added later.
 
 ## Develop
 
