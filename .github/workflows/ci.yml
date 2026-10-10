@@ -15,4 +15,5 @@ jobs:
       - name: Parser tests
         run: lua5.4 tests/run.lua
       - name: Bundle builds and matches the manifest version
-        run: scripts/bundle.sh "$(sed -n 's/^  version: \([0-9][^ ]*\).*/\1/p' module.yaml | head -1)"
+        run: |
+          scripts/bundle.sh "$(sed -n 's/^  version: \([0-9][^ ]*\).*/\1/p' module.yaml | head -1)"
