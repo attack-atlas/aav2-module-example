@@ -2,7 +2,7 @@
 
 A reference **worker module** for Attack Atlas (aav2). It wraps [ProjectDiscovery subfinder](https://github.com/projectdiscovery/subfinder) for passive subdomain enumeration.
 
-> **Status: example, draft format.** The aav2 plugin architecture (worker modules, a GitHub-based registry, multiple module runtimes) is being designed now. This repo is the concrete example that design is built against. The manifest is `schema_version: 0` and **will change** when the spec is signed off.
+> **Status: reference module, manifest `schema_version: 1`.** The manifest validates against aav2's `internal/manifest` package (plugin architecture, aav2 #23). The worker-side runtime that loads modules is still being built, so details may still change between releases.
 
 ## What a module is
 
@@ -10,7 +10,8 @@ A module packages everything a worker needs to run one tool, so that tool logic 
 
 | Piece | File | How the worker uses it |
 |---|---|---|
-| Manifest | [`module.yaml`](module.yaml) | Name, version, runtime, command, arguments, permissions and resources. This is the contract between the module and the worker. |
+| Manifest | [`module.yaml`](module.yaml) | Name, version, groups, command, arguments, permissions, resources and dependencies. This is the contract between the module and the worker. Names are restricted to `[a-z0-9._-]`, every checksum is 64 lowercase hex characters, versions are `MAJOR.MINOR.PATCH`, capabilities must be empty, and the command must pass aav2's flag lint. |
+| Dependencies | `dependencies:` in the manifest | `artifacts:` are pinned downloads, verified like binaries. `requires_runtime:` items (here `ca-certificates`) must already be in the worker's base image: they're checked, never installed. The module is only marked **ready** once every dependency is satisfied. |
 | External binary | `binaries:` in the manifest | Fetched from the **upstream release URL**, with the archive sha256 and the extracted-binary sha256 both verified, then installed into the worker's private tool directory. **The bundle never contains the binary.** |
 | Parser | [`parser/subfinder.lua`](parser/subfinder.lua) | Runs in the worker's sandboxed **Lua** runtime (no `io`/`os`) and turns raw tool output into aav2's normalized document (`assets`, `edges`, `parse_skipped`). Other runtimes, such as `wasm`, use the same contract. |
 | Config files | [`config/`](config) and `configs:` in the manifest | Written to a per-task, read-only tmpfs path before the tool runs, then removed. `source: module` files ship in the bundle. `source: orchestrator` files (anything that can hold secrets, like subfinder's API keys) are managed by an aav2 admin in the orchestrator (encrypted at rest, never echoed back by the API) and delivered only to the worker running the module. They override the bundled empty default. **Never commit secrets to a module repo.** |

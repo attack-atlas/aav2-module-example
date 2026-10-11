@@ -1,12 +1,10 @@
-# aav2 worker module manifest — EXAMPLE (draft format, schema_version 0).
-# The final manifest schema is defined by the aav2 plugin-architecture spec
-# (attack-atlas/aav2 #23); this repo is the reference example it is built
-# against and will be updated when the spec is signed off.
-schema_version: 0
+# aav2 worker module manifest — schema_version 1.
+# Validated by aav2's internal/manifest package (plugin architecture, #23).
+schema_version: 1
 
 module:
   name: subfinder
-  version: 1.1.0                    # module version (this repo's release tag, minus the "v")
+  version: 1.2.0                    # module version (this repo's release tag, minus the "v")
   description: Passive subdomain enumeration via ProjectDiscovery subfinder.
   homepage: https://github.com/attack-atlas/aav2-module-example
 
@@ -37,6 +35,24 @@ arguments:
     required: true
     # A value starting with "-" is rejected by the worker regardless (argv injection guard).
     pattern: '^[A-Za-z0-9.-]{1,253}$'
+
+# Worker groups this module serves (aav2 #121). An admin pins
+# (group, module) -> version; workers in other groups never fetch it.
+groups:
+  - default
+
+# Lowest worker runtime version that understands this manifest.
+aav2_min_worker: 0.1.0
+
+# Dependencies resolved BEFORE the module is marked ready.
+#   artifacts:        pinned self-contained downloads (static binaries, archives,
+#                     data trees), verified like `binaries:` — none needed here.
+#   requires_runtime: provided by the worker's base image (no package manager
+#                     at run time). Checked by the worker and `aav2 module doctor`,
+#                     never installed. subfinder needs CA certificates for HTTPS.
+dependencies:
+  requires_runtime:
+    - ca-certificates
 
 # Config files delivered to the tool at run time. Each one is written to a
 # per-task, read-only tmpfs path before exec and removed afterwards.
